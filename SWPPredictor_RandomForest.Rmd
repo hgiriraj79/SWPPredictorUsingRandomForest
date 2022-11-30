@@ -1,0 +1,344 @@
+---
+title: "SWPPredictor_RandomForest"
+author: "Giriraj"
+date: "2022-11-30"
+output: pdf_document
+---
+
+```{r}
+# importing dataset for the prediction model
+library(readr)
+df <- read_csv("dataset/dataset.csv")
+head(df)
+```
+
+```{r}
+# manipulating data to represent actual value
+# multiplying variable SWP * 100 to represent SWP received per month
+# multiplying variable Annual_income_and_SWP * 1000 to represent Annual_income_and_SWP received per year
+
+df$Annual_income_and_SWP <- df$Annual_income_and_SWP *1000
+df$SWP <- df$SWP * 100
+df
+```
+
+```{r}
+# mutating data for better analysis and reporting
+
+library(dplyr)
+df%>%
+  mutate(Education=case_when(
+    .$Education=="High School or GED" ~ 1,
+    .$Education=="Some highschool" ~ 1,
+    .$Education=="Completed Undergraduate" ~ 2,
+    .$Education=="Some Undergraduate" ~ 2,
+    .$Education=="Completed Masters" ~ 3,
+    .$Education=="Some Maters" ~ 3,
+    .$Education=="Some Phd" ~ 4,
+    .$Education=="Completed Phd" ~ 4
+    )) -> df
+```
+
+```{r}
+# mutating data for better analysis and reporting
+
+df%>%
+  mutate(Age=case_when(
+    .$Age =="18-29" ~ 1,
+    .$Age =="30-44" ~ 2,
+    .$Age =="45-60" ~ 3,
+    .$Age =="Greater than 60" ~ 4
+    )) -> df
+```
+
+```{r}
+# mutating data for better analysis and reporting
+
+df%>%
+  mutate(Household_Income=case_when(
+    .$Household_Income =="$0-$9,999" ~ 1,
+    .$Household_Income =="$10,000-$24,999" ~ 2,
+    .$Household_Income =="$25,000-$49,999" ~ 3,
+    .$Household_Income =="$50,000-$74,999" ~ 4,
+    .$Household_Income =="$75,000-$99,999" ~ 5,
+    .$Household_Income =="$100,000-$124,999" ~ 6,
+    .$Household_Income =="$125,000-$149,999" ~ 7,
+    .$Household_Income =="$150,000-$174,999" ~ 8,
+    .$Household_Income =="$175,000-$199,999" ~ 9,
+    .$Household_Income =="$200,000+" ~ 10,
+    .$Household_Income =="Prefer not to answer" ~ 996
+    )) -> df
+```
+
+```{r}
+head(df)
+```
+
+```{r}
+# filtering individuals who receive SWP for histogram
+df$SWP_valid <- df$SWP != 0
+
+# generating histogram for SWP to view its distribution
+hist(df$SWP[df$SWP_valid], breaks = 20, main = 'Histogram for people who receive SWP', xlab = 'SWP amount (US dollar)')
+```
+
+```{r}
+# generating scatter plot for SWP and Annual Income to view its relationship and understand its dependancy
+plot(x = df$SWP[df$SWP_valid], y = df$Annual_income_and_SWP[df$SWP_valid], main = 'Scatter plot for SWP & Annual income', xlab = 'SWP', ylab = 'Annual income')
+
+# printing mean and standard deviation for SWP
+print(paste('Mean value for SWP =', round(mean(df$SWP[df$SWP_valid]), 2)))
+print(paste('Mean value for SWP =', round(sd(df$SWP[df$SWP_valid]), 2)))
+```
+
+**Creating linear regression models to get best set of variables to predict SWP**
+
+```{r}
+# linear regression model for SWP ~ .
+m1 <- lm(SWP ~. , data = df)
+summary(m1)
+```
+
+```{r}
+# trimming features & checking for Multiple R-squared & Adjusted R-squared values to determine best suited features for decision tree
+m2 <- lm(SWP ~ Education + Own_computer + days_hospitalized + Disabled + Internet_access + Live_with_parents + Length_of_resume_gap_month + Annual_income_and_SWP + Unemployed + Read_books + Times_hospitalized + Age + Household_Income,data = df)
+summary(m2)
+```
+
+```{r}
+# trimming features & checking for Multiple R-squared & Adjusted R-squared values to determine best suited features for decision tree
+m3 <- lm(SWP ~ Education + days_hospitalized + Disabled + Internet_access + Live_with_parents + Length_of_resume_gap_month + Annual_income_and_SWP + Unemployed + Read_books + Times_hospitalized + Age + Household_Income, data = df)
+summary(m3)
+```
+
+```{r}
+# trimming features & checking for Multiple R-squared & Adjusted R-squared values to determine best suited features for decision tree
+m3.1 <- lm(SWP ~ Education + days_hospitalized + Disabled + Internet_access + Live_with_parents + Length_of_resume_gap_month + Annual_income_and_SWP + Unemployed + Read_books + Age + Household_Income,data = df)
+summary(m3.1)
+```
+
+```{r}
+# trimming features & checking for Multiple R-squared & Adjusted R-squared values to determine best suited features for decision tree
+m4 <- lm(SWP ~ Education + Disabled + Internet_access + Live_with_parents + Length_of_resume_gap_month + Annual_income_and_SWP + Unemployed + Read_books + Times_hospitalized + Age + Household_Income,data = df)
+summary(m4)
+```
+
+```{r}
+# trimming features & checking for Multiple R-squared & Adjusted R-squared values to determine best suited features for decision tree
+m5 <- lm(SWP ~ Education + Disabled + Internet_access + Length_of_resume_gap_month + Annual_income_and_SWP + Unemployed + Read_books + Times_hospitalized + Age + Household_Income,data = df)
+summary(m5)
+```
+
+```{r}
+# trimming features & checking for Multiple R-squared & Adjusted R-squared values to determine best suited features for decision tree
+m6 <- lm(SWP ~ Education + Disabled + Internet_access + Annual_income_and_SWP + Unemployed + Read_books + Times_hospitalized + Age + Household_Income, data = df)
+summary(m6)
+```
+
+
+**Comparing Multiple R-squared and Adjusted R-squared of different Linear Regression Models to select the best set of variables**
+\
+
+```{r}
+# creating new dataset, m_data with the features in focus gathered from model 6 of linear regression
+m_data <- df %>% select(2, 5, 6, 9, 10, 11, 12, 13, 14, 15) 
+head(m_data)
+```
+\
+**Performing Logistic Regression to calculate accuracy of variables being able to predict SWP**
+\
+```{r}
+# creating new dataset, log_data for logistic regression
+log_data <- m_data
+```
+
+```{r}
+# mutatting values of SWP to represent if the person receives money from SWP or not  
+log_data$SWP[log_data$SWP != 0] <- 1
+head(log_data)
+```
+
+```{r}
+library(caTools)
+library(ROCR)
+```
+
+```{r}
+set.seed(10086)
+
+# splitting dataset with split-ratio of 80%-20%
+split <- sample.split(log_data$SWP, SplitRatio = 0.8)
+train_reg <- subset(log_data, split == "TRUE")
+test_reg <- subset(log_data, split == "FALSE")
+```
+
+```{r}
+# training model
+logistic_model <- glm(SWP ~ Education + Disabled + Internet_access + Annual_income_and_SWP + Read_books + Times_hospitalized + Household_Income, data = train_reg, family = "binomial")
+
+# summary
+summary(logistic_model)
+```
+
+```{r}
+# predicting train and test data based on model
+predict_reg_train <- predict(logistic_model, train_reg, type = "response")
+predict_reg <- predict(logistic_model, test_reg, type = "response")
+```
+
+```{r}
+# calculating probabilities
+predict_reg_train <- ifelse(predict_reg_train >0.5, 1, 0)
+predict_reg <- ifelse(predict_reg >0.5, 1, 0)
+```
+
+```{r}
+# evaluating model accuracy using confusion matrix
+
+table(train_reg$SWP, predict_reg_train)
+table(test_reg$SWP, predict_reg)
+```
+
+```{r}
+# generating accuracy
+
+missing_classerr_train <- mean(predict_reg_train != train_reg$SWP)
+acc_train <- round(1 - missing_classerr_train, 2)
+print(paste('Accuracy for Train data =', acc_train))
+
+missing_classerr <- mean(predict_reg != test_reg$SWP)
+acc_test <- round(1 - missing_classerr, 2)
+print(paste('Accuracy for Test data =', acc_test))
+```
+
+```{r}
+set.seed(10086)
+# ROC-AUC curve
+ROCPred <- prediction(predict_reg, test_reg$SWP)
+ROCPer <- performance(ROCPred, measure = "tpr",
+							x.measure = "fpr")
+
+auc <- performance(ROCPred, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+```
+
+```{r}
+# plotting curve
+plot(ROCPer)
+plot(ROCPer, colorize = TRUE,
+	print.cutoffs.at = seq(0.1, by = 0.1),
+	main = "ROC CURVE")
+abline(a = 0, b = 1)
+
+auc <- round(auc, 4)
+legend(.8, .2, auc, title = "AUC", cex = 1)
+```
+
+\
+**Generating Decision Tree for variables selected from Linear Regression Model 6**
+\
+```{r}
+library(DAAG)
+library(party)
+library(rpart)
+library(rpart.plot)
+library(mlbench)
+library(caret)
+library(pROC)
+library(tree)
+```
+
+```{r}
+# subsetting data in ratio 80%-20% for decision tree
+set.seed(1234)
+ind <- sample(2, nrow(m_data), replace = T, prob = c(0.6, 0.4))
+train <- m_data[ind == 1,]
+test <- m_data[ind == 2,]
+
+# generating and plotting tree
+tree <- rpart(SWP ~., data = train)
+rpart.plot(tree)
+```
+
+\
+**Constructing Random Forest model for predicting SWP using variables selected from Linear Regression Model 6**
+\
+
+```{r}
+# creating prediction model and constructing its confusion matrix
+
+library(randomForest)
+library(caret)
+library(e1071)
+
+set.seed(10086)
+
+model <- randomForest(formula = SWP ~ ., data = m_data)
+model
+
+which.min(model$mse)
+sqrt(model$mse[which.min(model$mse)])
+plot(model)
+varImpPlot(model)
+
+# constructing random forest
+predictor_variable <- select(m_data, -SWP)
+model_tuned <- tuneRF(
+               x=predictor_variable, # defining predictor variables
+               y=m_data$SWP, # defining response variable
+               ntreeTry=500, # number of tree Random Forest will construct
+               mtryStart=4, 
+               stepFactor=1.5,
+               improve=0.01,
+               trace=FALSE #don't show real-time progress
+               )
+
+# splitting data into train and test subsets
+set.seed(10086)
+ind <- sample(2, nrow(m_data), replace = T, prob = c(0.8, 0.2))
+train <- m_data[ind == 1,]
+test <- m_data[ind == 2,]
+
+# Random Forest for train data
+classifier_RF = randomForest(x = train[-7],
+                             y = train$SWP,
+                             ntree = 500)
+
+classifier_RF
+
+y_pred = predict(classifier_RF, newdata = test[-7])
+
+# confusion matrix
+confusion_mtx = table(test$SWP, y_pred)
+confusion_mtx
+
+plot(classifier_RF)
+
+# importance plot
+importance(classifier_RF)
+
+# cariable importance plot
+varImpPlot(classifier_RF)
+```
+
+```{r}
+# creating new data to predict SWP value
+new <- data.frame(Education=2, Disabled=0, Internet_access=1, Annual_income_and_SWP=58000, Unemployed=0, Read_books=1, Times_hospitalized=1, Age=4, Household_Income=6)
+
+new1 <- data.frame(Education=4, Disabled=1, Internet_access=1, Annual_income_and_SWP=58000, Unemployed=1, Read_books=0, Times_hospitalized=1, Age=4, Household_Income=5)
+
+new2 <- data.frame(Education=2, Disabled=0, Internet_access=1, Annual_income_and_SWP=100000, Unemployed=0, Read_books=1, Times_hospitalized=0, Age=2, Household_Income=8)
+
+new3 <- data.frame(Education=2, Disabled=1, Internet_access=0, Annual_income_and_SWP=1000, Unemployed=1, Read_books=0, Times_hospitalized=20, Age=3, Household_Income=4)
+
+new4 <- data.frame(Education=4, Disabled=0, Internet_access=1, Annual_income_and_SWP=100000, Unemployed=0, Read_books=1, Times_hospitalized=0, Age=2, Household_Income=10)
+
+
+predict(model, newdata=new)
+predict(model, newdata=new1)
+predict(model, newdata=new2)
+predict(model, newdata=new3)
+predict(model, newdata=new4)
+```
+
