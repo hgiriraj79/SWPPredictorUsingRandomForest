@@ -1,4 +1,4 @@
-# SWPPredictorUsingRandomForest
+# SWP Predictor Using Random Forest
 Predicting Social Welfare Program (SWP) amount using Random Forest
 
 __Key Takeaways of the SWP Program of the United States of America__
