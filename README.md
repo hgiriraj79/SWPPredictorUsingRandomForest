@@ -15,3 +15,5 @@ Welfare: What It Is, Different Types, Who Qualifies for Benefits. (2022, July 11
 __Focus of the model__
 
 The key focus of constructing this prediction model was to determine the SWP amount that the individual should receive based on the inputs provided by the user. This will help the department calculate amount to be distributed with efficiency and ease. 
+
+The project focuses on determining if the current recipients for the SWP amount should be considered for the program. The questions revolves around the assesment criteria used by the government to determine individuals eligibility. Using different Machine Learning models, an analysis was created to see how different factors being used to distribute amount and identify gaps which can help improve the assesment to bridge them. 
